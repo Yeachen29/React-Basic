@@ -4,6 +4,7 @@ import RecipeDes from "./recipe-des";
 
 export default function Header(){
    
+
    const [ingredientListItem, setIngredient] = useState([]);
 
    const fromSubmit = (e) => {
@@ -30,17 +31,13 @@ export default function Header(){
          <div className="recipeDes">
             {
                hideRecipe ? 
-               <RecipeDes /> :
+               <RecipeDes 
+               ingredientList = {ingredientListItem}
+               /> : 
                null
             }
          </div>
-         {
-            hideRecipe ? 
-            <RecipeDes 
-            ingredientList = {ingredientListItem}
-            /> : 
-            null
-         }
+         
          
       </>
    )

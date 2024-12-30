@@ -1,58 +1,38 @@
-import React from "react";
+import { useState, useEffect } from "react";
+import Markdown from "react-markdown";
+import env from "./../auth.json";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export default function RecipeDes(prop) {
-  const url = `https://forkify-api.herokuapp.com/api/v2/recipes?search=${prop.ingredientList}`;
-  const [recipes, setRecipes] = React.useState([]);
-  const [error, setError] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
+export default function RecipeDes({ ingredientList }) {
+  const [recipeDescription, setRecipeDescription] = useState("");
 
-  React.useEffect(() => {
-    if (!prop.ingredientList) return; // Prevent fetch if no ingredients are provided
+  useEffect(() => {
+    const fetchRecipeDescription = async () => {
+      try {
+        const genAI = new GoogleGenerativeAI(env["gemini-api"]);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        // Use the ingredient list in the prompt
+        const prompt = `Suggest a recipe using the following ingredients: ${ingredientList.join(", ")}`;
+        const result = await model.generateContent(prompt);
 
-    setLoading(true);
-    fetch(url)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch recipes.");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setRecipes(data.data?.recipes || []);
-        setError(null); // Clear previous errors
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [prop.ingredientList]);
+        // Store the generated text in state
+        setRecipeDescription(result.response.text());
+      } catch (error) {
+        console.error("Error generating recipe description:", error);
+      }
+    };
 
-  const shown = recipes.map((item) => (
-    <li key={item.id}>
-      {item.title.charAt(0).toUpperCase() + item.title.slice(1)}
-    </li>
-  ));
+    fetchRecipeDescription();
+  }, [ingredientList]); // Dependency array ensures the effect runs when ingredientList changes
 
   return (
-    <div className="generatorRecipe">
-      <div className="contain">
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
-      {!loading && !error && (shown.length ? <>
-      <h1>Recipes</h1>
-      <ul>
-         {shown}
-      </ul>
-      </> : 
-      undefined)}
-      </div>
-    </div>
+    <>
+      <h1>Recipe Suggestions</h1>
+      <h2>Ingredients: {ingredientList.join(", ")}</h2><br />
+      <Markdown>
+        {recipeDescription ? recipeDescription : "Generating recipe..."}
+      </Markdown>
+    </>
   );
 }
-
-
-
-
-      
